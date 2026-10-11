@@ -237,7 +237,7 @@ private struct MetalPreview: UIViewRepresentable {
                 verticalVelocity = 0
                 isGrounded = true
             } else {
-                let surface = Float(bridge.surfaceHeightAtX(16, z: 16))
+                let surface = Float(bridge.surfaceHeightAt(16, z: 16))
                 playerPosition = SIMD3<Float>(16, surface + 1.7, 16)
                 verticalVelocity = 0
                 isGrounded = true
@@ -414,7 +414,7 @@ private struct MetalPreview: UIViewRepresentable {
                     let step = simd_normalize(input) * (5 * deltaTime)
                     let nextX = min(max(playerPosition.x + step.x, 1), 30)
                     let nextZ = min(max(playerPosition.z + step.z, 1), 30)
-                    let nextSurface = Float(bridge.surfaceHeightAtX(NSInteger(nextX.rounded()), z: NSInteger(nextZ.rounded())))
+                    let nextSurface = Float(bridge.surfaceHeightAt(NSInteger(nextX.rounded()), z: NSInteger(nextZ.rounded())))
                     if nextSurface + 1.7 <= playerPosition.y + 0.55 {
                         playerPosition.x = nextX
                         playerPosition.z = nextZ
@@ -422,7 +422,7 @@ private struct MetalPreview: UIViewRepresentable {
                 }
                 verticalVelocity -= 20 * deltaTime
                 playerPosition.y += verticalVelocity * deltaTime
-                let groundHeight = Float(bridge.surfaceHeightAtX(NSInteger(playerPosition.x.rounded()), z: NSInteger(playerPosition.z.rounded()))) + 1.7
+                let groundHeight = Float(bridge.surfaceHeightAt(NSInteger(playerPosition.x.rounded()), z: NSInteger(playerPosition.z.rounded()))) + 1.7
                 if playerPosition.y <= groundHeight {
                     playerPosition.y = groundHeight
                     verticalVelocity = 0
