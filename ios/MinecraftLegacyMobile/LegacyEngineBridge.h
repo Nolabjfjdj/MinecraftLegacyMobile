@@ -10,6 +10,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)start;
 - (void)stop;
 - (void)advanceFrame;
+- (NSData *)meshVertexData;
+- (NSData *)meshIndexData;
+- (NSUInteger)meshVertexCount;
+- (NSUInteger)meshIndexCount;
 
 @end
 

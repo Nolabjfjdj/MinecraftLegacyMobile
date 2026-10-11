@@ -1,6 +1,7 @@
 import SwiftUI
 import MetalKit
 import OSLog
+import simd
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -10,65 +11,56 @@ struct ContentView: View {
     private let lifecycleLogger = Logger(subsystem: "MinecraftLegacyMobile", category: "Lifecycle")
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Image(systemName: "gamecontroller.fill")
-                .font(.system(size: 52))
+                .font(.system(size: 42))
                 .accessibilityHidden(true)
 
             Text("MinecraftLegacyMobile")
                 .font(.title2.bold())
                 .multilineTextAlignment(.center)
 
-            Text("Prototype iOS")
+            Text("Terrain voxel • rendu Metal")
                 .font(.headline)
 
+            MetalPreview(isActive: scenePhase == .active, bridge: engineBridge)
+                .frame(height: 320)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+
             Text(engineBridge.statusMessage())
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: 320)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Test de rendu Metal")
-                    .font(.headline)
-
-                if MTLCreateSystemDefaultDevice() != nil {
-                    MetalPreview(isActive: scenePhase == .active)
-                        .frame(height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                    Text("Surface Metal active. Aucun contenu Minecraft n’est rendu.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Metal n’est pas disponible sur cet appareil.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: 360, alignment: .leading)
-
-            VStack(spacing: 8) {
-                Text("Frames de test : \(frameCount)")
-                    .font(.headline)
-                    .monospacedDigit()
-
-                Button {
-                    engineBridge.advanceFrame()
-                    frameCount = engineBridge.frameCount()
-                } label: {
-                    Label("Simuler une frame native", systemImage: "play.fill")
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!engineRunning)
-            }
-
-            Text("Ce prototype valide le pont Swift/C++ et prépare le rendu natif. Le moteur et les ressources Minecraft ne sont pas intégrés.")
                 .font(.footnote)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: 320)
+                .frame(maxWidth: 340)
+
+            HStack {
+                Label("\(engineBridge.meshVertexCount()) sommets", systemImage: "cube.transparent")
+                Spacer()
+                Label("\(engineBridge.meshIndexCount() / 3) triangles", systemImage: "triangle")
+            }
+            .font(.caption.monospacedDigit())
+            .frame(maxWidth: 340)
+
+            Text("Frames : \(frameCount)")
+                .font(.headline)
+                .monospacedDigit()
+
+            Button {
+                engineBridge.advanceFrame()
+                frameCount = engineBridge.frameCount()
+            } label: {
+                Label("Tester une frame native", systemImage: "play.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!engineRunning)
+
+            Text("Terrain de test généré en C++ et affiché avec Metal. Ce n’est pas encore le moteur original de Minecraft Legacy Console Edition.")
+                .font(.footnote)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: 340)
         }
-        .padding(24)
+        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             updateEngineLifecycle(for: scenePhase)
@@ -80,7 +72,7 @@ struct ContentView: View {
         .onDisappear {
             engineBridge.stop()
             engineRunning = false
-            lifecycleLogger.info("Content view disappeared; placeholder core stopped")
+            lifecycleLogger.info("Content view disappeared; engine core stopped")
         }
     }
 
@@ -97,12 +89,15 @@ struct ContentView: View {
 
 private struct MetalPreview: UIViewRepresentable {
     let isActive: Bool
+    let bridge: LegacyEngineBridge
 
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
         view.delegate = context.coordinator
-        view.clearColor = MTLClearColor(red: 0.025, green: 0.045, blue: 0.09, alpha: 1)
+        view.clearColor = MTLClearColor(red: 0.43, green: 0.67, blue: 0.88, alpha: 1)
         view.colorPixelFormat = .bgra8Unorm
+        view.depthStencilPixelFormat = .depth32Float
+        view.clearDepth = 1
         view.preferredFramesPerSecond = 60
         view.isPaused = !isActive
         view.enableSetNeedsDisplay = false
@@ -113,17 +108,138 @@ private struct MetalPreview: UIViewRepresentable {
         view.isPaused = !isActive
     }
 
-    fileprivate func makeCoordinator() -> Renderer {
-        Renderer()
+    func makeCoordinator() -> Renderer {
+        Renderer(bridge: bridge)
     }
 
     fileprivate final class Renderer: NSObject, MTKViewDelegate {
-        private let commandQueue = MTLCreateSystemDefaultDevice()?.makeCommandQueue()
+        private let device: MTLDevice?
+        private let commandQueue: MTLCommandQueue?
+        private let pipelineState: MTLRenderPipelineState?
+        private let depthState: MTLDepthStencilState?
+        private let vertexBuffer: MTLBuffer?
+        private let indexBuffer: MTLBuffer?
+        private let indexCount: Int
+
+        init(bridge: LegacyEngineBridge) {
+            device = MTLCreateSystemDefaultDevice()
+            commandQueue = device?.makeCommandQueue()
+            indexCount = Int(bridge.meshIndexCount())
+
+            var pipeline: MTLRenderPipelineState?
+            var depth: MTLDepthStencilState?
+            var vertices: MTLBuffer?
+            var indices: MTLBuffer?
+
+            if let device,
+               let vertexData = bridge.meshVertexData() as Data?,
+               let indexData = bridge.meshIndexData() as Data?,
+               !vertexData.isEmpty,
+               !indexData.isEmpty,
+               let vertexBufferCreated = vertexData.withUnsafeBytes({ bytes in
+                   bytes.baseAddress.flatMap {
+                       device.makeBuffer(bytes: $0, length: vertexData.count, options: .storageModeShared)
+                   }
+               }),
+               let indexBufferCreated = indexData.withUnsafeBytes({ bytes in
+                   bytes.baseAddress.flatMap {
+                       device.makeBuffer(bytes: $0, length: indexData.count, options: .storageModeShared)
+                   }
+               }) {
+                vertices = vertexBufferCreated
+                indices = indexBufferCreated
+
+                let shaderSource = """
+                #include <metal_stdlib>
+                using namespace metal;
+
+                struct VertexIn {
+                    float3 position [[attribute(0)]];
+                    float3 normal [[attribute(1)]];
+                    float blockType [[attribute(2)]];
+                };
+
+                struct VertexOut {
+                    float4 position [[position]];
+                    float3 normal;
+                    float blockType;
+                };
+
+                struct Uniforms {
+                    float4x4 mvp;
+                };
+
+                vertex VertexOut terrainVertex(VertexIn input [[stage_in]],
+                                               constant Uniforms& uniforms [[buffer(1)]]) {
+                    VertexOut output;
+                    output.position = uniforms.mvp * float4(input.position, 1.0);
+                    output.normal = input.normal;
+                    output.blockType = input.blockType;
+                    return output;
+                }
+
+                fragment float4 terrainFragment(VertexOut input [[stage_in]]) {
+                    float3 baseColor;
+                    if (input.blockType > 2.5) {
+                        baseColor = float3(0.22, 0.62, 0.18);
+                    } else if (input.blockType > 1.5) {
+                        baseColor = float3(0.42, 0.27, 0.14);
+                    } else {
+                        baseColor = float3(0.48, 0.49, 0.51);
+                    }
+                    float3 lightDirection = normalize(float3(-0.45, 0.85, 0.35));
+                    float lighting = max(dot(normalize(input.normal), lightDirection), 0.0) * 0.65 + 0.35;
+                    return float4(baseColor * lighting, 1.0);
+                }
+                """
+
+                if let library = try? device.makeLibrary(source: shaderSource, options: nil),
+                   let vertexFunction = library.makeFunction(name: "terrainVertex"),
+                   let fragmentFunction = library.makeFunction(name: "terrainFragment") {
+                    let descriptor = MTLRenderPipelineDescriptor()
+                    descriptor.vertexFunction = vertexFunction
+                    descriptor.fragmentFunction = fragmentFunction
+                    descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+                    descriptor.depthAttachmentPixelFormat = .depth32Float
+
+                    let vertexDescriptor = MTLVertexDescriptor()
+                    vertexDescriptor.attributes[0].format = .float3
+                    vertexDescriptor.attributes[0].offset = 0
+                    vertexDescriptor.attributes[0].bufferIndex = 0
+                    vertexDescriptor.attributes[1].format = .float3
+                    vertexDescriptor.attributes[1].offset = 12
+                    vertexDescriptor.attributes[1].bufferIndex = 0
+                    vertexDescriptor.attributes[2].format = .float
+                    vertexDescriptor.attributes[2].offset = 24
+                    vertexDescriptor.attributes[2].bufferIndex = 0
+                    vertexDescriptor.layouts[0].stride = 28
+                    descriptor.vertexDescriptor = vertexDescriptor
+
+                    pipeline = try? device.makeRenderPipelineState(descriptor: descriptor)
+                }
+
+                let depthDescriptor = MTLDepthStencilDescriptor()
+                depthDescriptor.depthCompareFunction = .less
+                depthDescriptor.isDepthWriteEnabled = true
+                depth = device.makeDepthStencilState(descriptor: depthDescriptor)
+            }
+
+            vertexBuffer = vertices
+            indexBuffer = indices
+            pipelineState = pipeline
+            depthState = depth
+            super.init()
+        }
 
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
         func draw(in view: MTKView) {
             guard
+                let device,
+                let vertexBuffer,
+                let indexBuffer,
+                let pipelineState,
+                let depthState,
                 let descriptor = view.currentRenderPassDescriptor,
                 let drawable = view.currentDrawable,
                 let commandBuffer = commandQueue?.makeCommandBuffer(),
@@ -132,9 +248,53 @@ private struct MetalPreview: UIViewRepresentable {
                 return
             }
 
+            let aspect = max(Float(view.drawableSize.width / max(view.drawableSize.height, 1)), 0.1)
+            let projection = perspectiveMatrix(verticalFOV: 1.05, aspect: aspect, near: 0.1, far: 200)
+            let eye = SIMD3<Float>(47, 43, 58)
+            let target = SIMD3<Float>(16, 14, 16)
+            let viewMatrix = lookAtMatrix(eye: eye, target: target, up: SIMD3<Float>(0, 1, 0))
+            let mvp = projection * viewMatrix
+
+            var uniforms = mvp
+            encoder.setRenderPipelineState(pipelineState)
+            encoder.setDepthStencilState(depthState)
+            encoder.setCullMode(.none)
+            encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+            encoder.setVertexBytes(&uniforms, length: MemoryLayout<simd_float4x4>.stride, index: 1)
+            encoder.drawIndexedPrimitives(
+                type: .triangle,
+                indexCount: indexCount,
+                indexType: .uint32,
+                indexBuffer: indexBuffer,
+                indexBufferOffset: 0
+            )
             encoder.endEncoding()
             commandBuffer.present(drawable)
             commandBuffer.commit()
+        }
+
+        private func perspectiveMatrix(verticalFOV: Float, aspect: Float, near: Float, far: Float) -> simd_float4x4 {
+            let yScale = 1 / tan(verticalFOV * 0.5)
+            let xScale = yScale / aspect
+            let zScale = far / (near - far)
+            return simd_float4x4(columns: (
+                SIMD4<Float>(xScale, 0, 0, 0),
+                SIMD4<Float>(0, yScale, 0, 0),
+                SIMD4<Float>(0, 0, zScale, -1),
+                SIMD4<Float>(0, 0, near * zScale, 0)
+            ))
+        }
+
+        private func lookAtMatrix(eye: SIMD3<Float>, target: SIMD3<Float>, up: SIMD3<Float>) -> simd_float4x4 {
+            let forward = simd_normalize(target - eye)
+            let right = simd_normalize(simd_cross(forward, up))
+            let correctedUp = simd_cross(right, forward)
+            return simd_float4x4(columns: (
+                SIMD4<Float>(right.x, correctedUp.x, -forward.x, 0),
+                SIMD4<Float>(right.y, correctedUp.y, -forward.y, 0),
+                SIMD4<Float>(right.z, correctedUp.z, -forward.z, 0),
+                SIMD4<Float>(-simd_dot(right, eye), -simd_dot(correctedUp, eye), simd_dot(forward, eye), 1)
+            ))
         }
     }
 }
