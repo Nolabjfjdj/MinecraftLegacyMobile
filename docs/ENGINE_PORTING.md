@@ -2,13 +2,13 @@
 
 ## Objective
 
-Identify a technically feasible and legally permitted route toward a native iOS game runtime. The current SwiftUI app is only a build-system proof of concept; it is not the game engine.
+Identify a technically feasible and legally permitted route toward a native iOS game runtime. The current SwiftUI app and Objective-C++ bridge compile successfully, but the bridge only increments a test counter; it is not the game engine and does not run Minecraft.
 
 ## Candidate reference: MCLCE-iOS
 
 Repository: https://github.com/dtentiion/MCLCE-iOS
 
-Its public README describes a native C++/CMake iOS port of TU19 Legacy Console Edition. The project reports that its main menu works and that gameplay simulation code is linked and ticking, while its installation page still says there is no playable build yet. It describes a rendering/UI stack involving Ruffle, wgpu/MetalANGLE, miniaudio, and Apple's GameController framework.
+Its public README describes a native C++/CMake iOS port of TU19 Legacy Console Edition. The project reports that its main menu works and that gameplay simulation code is linked and ticking, while its installation page still says there is no playable build yet. It describes a rendering/UI stack involving Ruffle and wgpu/MetalANGLE, miniaudio for audio, and Apple's GameController framework for controller input. These are candidate-specific implementation details, not dependencies already installed in MinecraftLegacyMobile.
 
 This is a valuable technical reference for understanding the scale of the porting work, but it is not automatically a reusable dependency. Its CONTRIBUTING guide says the project-wide license is still to be decided. Do not copy or integrate its code unless the maintainers clarify the applicable license and permissions. This project should independently record the rights and licenses for every component it uses.
 
@@ -59,10 +59,24 @@ A simulator build does not prove that the same code will run correctly on a phys
 
 ## Current blockers
 
-- No game engine is integrated.
-- Candidate projects and their licenses still need a documented review.
+- No Legacy Console Edition engine is integrated; the current C++ code is only a frame counter.
+- MCLCE-iOS is a technical reference, but its public contributing guide says the project-wide license is still to be decided. Do not copy its code until its maintainers clarify permission.
 - No game assets are included.
-- The starter CI job verifies compilation only; it does not test runtime behavior or gameplay.
+- The current CI job verifies compilation only; it does not test runtime behavior or gameplay.
+
+## Initial subsystem inventory for the next eligible engine
+
+- **Build:** CMake/toolchain, compiler standard, third-party packages, generated sources, and platform-specific build targets.
+- **Lifecycle/platform:** startup, pause/resume, threads, timing, memory warnings, filesystem and save paths.
+- **Graphics:** renderer API, shader formats, surface creation, GPU resources, and Metal compatibility.
+- **UI:** menu runtime and its dependencies; keep original game assets separate from engine code.
+- **Audio:** mixer/backend, streaming, codecs, and iOS audio-session interruptions.
+- **Input:** controller mapping, touch controls, focus, and pause behavior.
+- **Gameplay/world:** main loop, simulation ticks, entities, chunks, world loading, save compatibility, and client/server assumptions.
+- **Networking:** socket APIs, multiplayer services, and platform-specific certificate handling.
+- **Assets:** source and rights for every texture, sound, font, menu file, and other game resource.
+
+This is a checklist for inspection, not a claim that the candidate engine has already been fully audited.
 
 ## Acceptance checklist
 
