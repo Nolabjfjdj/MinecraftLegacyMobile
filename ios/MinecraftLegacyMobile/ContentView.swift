@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var isFirstPerson = false
     @State private var movementX: Float = 0
     @State private var movementY: Float = 0
+    @State private var jumpRequest = 0
     private let lifecycleLogger = Logger(subsystem: "MinecraftLegacyMobile", category: "Lifecycle")
 
     var body: some View {
@@ -33,7 +34,8 @@ struct ContentView: View {
                     bridge: engineBridge,
                     isFirstPerson: isFirstPerson,
                     movementX: movementX,
-                    movementY: movementY
+                    movementY: movementY,
+                    jumpRequest: jumpRequest
                 )
                 if isFirstPerson {
                     VirtualJoystick { x, y in
@@ -50,6 +52,15 @@ struct ContentView: View {
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
+
+            if isFirstPerson {
+                Button {
+                    jumpRequest += 1
+                } label: {
+                    Label("Sauter", systemImage: "arrow.up")
+                }
+                .buttonStyle(.borderedProminent)
+            }
 
             Button {
                 isFirstPerson.toggle()
@@ -161,6 +172,7 @@ private struct MetalPreview: UIViewRepresentable {
     let isFirstPerson: Bool
     let movementX: Float
     let movementY: Float
+    let jumpRequest: Int
 
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
@@ -186,6 +198,7 @@ private struct MetalPreview: UIViewRepresentable {
         view.isPaused = !isActive
         context.coordinator.setFirstPerson(isFirstPerson)
         context.coordinator.setMovement(x: movementX, forward: movementY)
+        context.coordinator.requestJump(jumpRequest)
     }
 
     func makeCoordinator() -> Renderer {
@@ -200,6 +213,7 @@ private struct MetalPreview: UIViewRepresentable {
         private let vertexBuffer: MTLBuffer?
         private let indexBuffer: MTLBuffer?
         private let indexCount: Int
+        private let bridge: LegacyEngineBridge
         private var cameraYaw: Float = 0.63
         private var cameraPitch: Float = 0.5
         private var cameraDistance: Float = 60
@@ -216,7 +230,14 @@ private struct MetalPreview: UIViewRepresentable {
             movementX = 0
             movementForward = 0
             if !enabled {
-                playerPosition = SIMD3<Float>(16, 20, 16)
+                playerPosition = SIMD3<Float>(16, 27, 16)
+                verticalVelocity = 0
+                isGrounded = true
+            } else {
+                let surface = Float(bridge.surfaceHeightAtX(16, z: 16))
+                playerPosition = SIMD3<Float>(16, surface + 1.7, 16)
+                verticalVelocity = 0
+                isGrounded = true
             }
         }
 
@@ -225,7 +246,17 @@ private struct MetalPreview: UIViewRepresentable {
             movementForward = min(max(forward, -1), 1)
         }
 
+        fileprivate func requestJump(_ request: Int) {
+            guard request != lastJumpRequest else { return }
+            lastJumpRequest = request
+            if isFirstPerson && isGrounded {
+                verticalVelocity = 8
+                isGrounded = false
+            }
+        }
+
         init(bridge: LegacyEngineBridge) {
+            self.bridge = bridge
             device = MTLCreateSystemDefaultDevice()
             commandQueue = device?.makeCommandQueue()
             indexCount = Int(bridge.meshIndexCount())
@@ -378,8 +409,23 @@ private struct MetalPreview: UIViewRepresentable {
                 let magnitude = simd_length(input)
                 if magnitude > 0.01 {
                     let step = simd_normalize(input) * (5 * deltaTime)
-                    playerPosition.x = min(max(playerPosition.x + step.x, 1), 30)
-                    playerPosition.z = min(max(playerPosition.z + step.z, 1), 30)
+                    let nextX = min(max(playerPosition.x + step.x, 1), 30)
+                    let nextZ = min(max(playerPosition.z + step.z, 1), 30)
+                    let nextSurface = Float(bridge.surfaceHeightAtX(NSInteger(nextX.rounded()), z: NSInteger(nextZ.rounded())))
+                    if nextSurface + 1.7 <= playerPosition.y + 0.55 {
+                        playerPosition.x = nextX
+                        playerPosition.z = nextZ
+                    }
+                }
+                verticalVelocity -= 20 * deltaTime
+                playerPosition.y += verticalVelocity * deltaTime
+                let groundHeight = Float(bridge.surfaceHeightAtX(NSInteger(playerPosition.x.rounded()), z: NSInteger(playerPosition.z.rounded()))) + 1.7
+                if playerPosition.y <= groundHeight {
+                    playerPosition.y = groundHeight
+                    verticalVelocity = 0
+                    isGrounded = true
+                } else {
+                    isGrounded = false
                 }
             }
 

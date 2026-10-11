@@ -9,6 +9,7 @@
 
 @implementation LegacyEngineBridge {
     minecraftlegacy::LegacyEngineCore core_;
+    minecraftlegacy::LegacyVoxelWorld world_;
     std::vector<float> vertexData_;
     std::vector<std::uint32_t> indexData_;
     NSUInteger vertexCount_;
@@ -17,8 +18,7 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        minecraftlegacy::LegacyVoxelWorld world;
-        const minecraftlegacy::VoxelMesh mesh = minecraftlegacy::VoxelMesher().build(world);
+        const minecraftlegacy::VoxelMesh mesh = minecraftlegacy::VoxelMesher().build(world_);
         vertexData_.reserve(mesh.vertices.size() * 7);
         for (const minecraftlegacy::VoxelMeshVertex& vertex : mesh.vertices) {
             vertexData_.push_back(vertex.x);

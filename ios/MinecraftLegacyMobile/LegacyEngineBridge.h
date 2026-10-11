@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSData *)meshIndexData;
 - (NSUInteger)meshVertexCount;
 - (NSUInteger)meshIndexCount;
+- (NSInteger)surfaceHeightAtX:(NSInteger)x z:(NSInteger)z;
 
 @end
 
