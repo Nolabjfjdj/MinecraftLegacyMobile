@@ -12,9 +12,9 @@ The placeholder core lives in `Engine/Core/LegacyEngineCore.hpp`, a header-only 
 
 Repository: https://github.com/dtentiion/MCLCE-iOS
 
-Its public README describes a native C++/CMake iOS port of TU19 Legacy Console Edition. The project reports that its main menu works and that gameplay simulation code is linked and ticking, while its installation page still says there is no playable build yet. It describes a rendering/UI stack involving Ruffle and wgpu/MetalANGLE, miniaudio for audio, and Apple's GameController framework for controller input. These are candidate-specific implementation details, not dependencies already installed in MinecraftLegacyMobile.
+Its public project description presents a native C++/CMake iOS port of TU19 Legacy Console Edition and describes a menu/runtime stack with Ruffle, wgpu/MetalANGLE, miniaudio, and Apple's GameController framework. Those are candidate-specific implementation details, not dependencies already installed in MinecraftLegacyMobile. Its public project description also says game assets are not included.
 
-This is a valuable technical reference for understanding the scale of the porting work, but it is not automatically a reusable dependency. Its CONTRIBUTING guide says the project-wide license is still to be decided. Do not copy or integrate its code unless the maintainers clarify the applicable license and permissions. This project should independently record the rights and licenses for every component it uses.
+This is a valuable technical reference for understanding the scale of the porting work, but it is not automatically a reusable dependency. The candidate's contributing documentation has stated that the project-wide license is still to be decided. Do not copy or integrate its code unless the maintainers clarify the applicable license and permissions. The same provenance and rights review applies to every dependency and asset.
 
 Sources:
 
@@ -27,14 +27,14 @@ Sources:
 Before copying or integrating code, record for each candidate:
 
 - Repository and upstream maintainers.
-- Explicit license and whether it covers the code and any bundled assets.
+- Explicit license and whether it covers code and bundled assets.
 - Supported game edition and version.
 - Current build instructions and whether a clean build can be reproduced.
 - Required third-party libraries and their licenses.
 - Existing platform-specific assumptions.
 - Evidence that the code can run without proprietary files that we do not have permission to use.
 
-A public repository is not automatically open source. If licensing or rights are unclear, treat the code and assets as unavailable for reuse until clarified.
+A public repository is not automatically open source. GitHub's own guidance notes that without a license, default copyright applies; a public repository being viewable or forkable is not the same as permission to reuse its contents. See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository.
 
 ## Gate 2: map platform dependencies
 
@@ -58,9 +58,7 @@ The current `Engine/Core` component is only a placeholder showing where platform
 
 ## Gate 4: prove one small milestone
 
-The first engine-related milestone should be a minimal native rendering test on the iOS Simulator and then a real iPhone. It should demonstrate surface creation, frame updates, lifecycle handling, and clean shutdown before any attempt to load game content.
-
-A simulator build does not prove that the same code will run correctly on a physical device.
+The current CI workflow now compiles and runs the portable C++ tests, builds the app for the iOS Simulator, and attempts to boot an available iPhone simulator, install the app, and launch it. The new launch check must pass before we claim simulator launch validation. It still does not verify gameplay or prove the engine is integrated.
 
 ## Upstream source landscape
 
@@ -71,9 +69,9 @@ A port or fork for a different console is useful as evidence of platform-specifi
 ## Current blockers
 
 - No Legacy Console Edition engine is integrated; the current C++ code is only a frame counter.
-- MCLCE-iOS is a technical reference, but its public contributing guide says the project-wide license is still to be decided. Do not copy its code until its maintainers clarify permission.
+- MCLCE-iOS is a technical reference, but its public contributing guide has stated that the project-wide license is still to be decided. Do not copy its code until its maintainers clarify permission.
 - No game assets are included.
-- The current CI job verifies compilation only; it does not test runtime behavior or gameplay.
+- Simulator launch is not yet confirmed by the new CI step.
 
 ## Initial subsystem inventory for the next eligible engine
 
