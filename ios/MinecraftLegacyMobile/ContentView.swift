@@ -77,6 +77,11 @@ struct ContentView: View {
             lifecycleLogger.info("Scene phase changed: \(String(describing: phase), privacy: .public)")
             updateEngineLifecycle(for: phase)
         }
+        .onDisappear {
+            engineBridge.stop()
+            engineRunning = false
+            lifecycleLogger.info("Content view disappeared; placeholder core stopped")
+        }
     }
 
     private func updateEngineLifecycle(for phase: ScenePhase) {

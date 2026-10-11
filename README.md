@@ -16,6 +16,7 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 - [x] Verify the MetalKit code compiles in GitHub Actions.
 - [x] Pause the Metal preview while the app is inactive and log scene lifecycle changes.
 - [x] Add a placeholder C++ start/stop lifecycle tied to the app's active state.
+- [x] Stop the placeholder core if its SwiftUI view disappears.
 - [x] Record an initial technical and licensing assessment of the MCLCE-iOS reference.
 - [ ] Run the app and test the Metal surface and native counter in the iOS Simulator or on a device.
 - [ ] Complete source provenance, license, and dependency review before selecting an engine.
