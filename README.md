@@ -4,16 +4,16 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 
 ## Current status
 
-**Stage 2 — Native bridge proof of concept (build verification pending)**
+**Stage 2 — Native bridge proof of concept (build passes)**
 
 - [x] Create the native SwiftUI iOS app.
 - [x] Confirm the original SwiftUI-only app builds in GitHub Actions.
 - [x] Add a minimal Objective-C++ wrapper containing a small C++ frame counter.
 - [x] Expose the wrapper to Swift through a bridging header.
 - [x] Add a button that calls the native code and displays its frame count.
-- [ ] Confirm the updated build passes in GitHub Actions.
-- [ ] Audit candidate engine projects, dependencies, and applicable licenses.
-- [ ] Establish a lawful and technically viable route to engine integration.
+- [x] Confirm the updated bridge build passes.
+- [x] Record an initial technical and licensing assessment of the MCLCE-iOS reference.
+- [ ] Complete source provenance, license, and dependency review before selecting an engine.
 
 The native bridge is only an integration test. It does not contain the Minecraft engine, gameplay, or original game assets.
 
@@ -33,4 +33,4 @@ Open `ios/MinecraftLegacyMobile.xcodeproj` in Xcode on macOS and select the `Min
 
 This is an unofficial, independent project and is not affiliated with or endorsed by Mojang or Microsoft. The repository does not include leaked game source code or original Minecraft assets. Any future use or distribution of third-party code, game code, or assets must be assessed against the applicable rights and licenses before integration or release.
 
-See [the legal notes](docs/LEGAL.md), [the roadmap](docs/ROADMAP.md), and [the engine porting notes](docs/ENGINE_PORTING.md).
+See [the legal notes](docs/LEGAL.md), [the roadmap](docs/ROADMAP.md), and [the engine porting audit](docs/ENGINE_PORTING.md).
