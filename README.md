@@ -10,6 +10,8 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 - [x] Confirm the original SwiftUI-only app builds in GitHub Actions.
 - [x] Add a minimal Objective-C++ wrapper containing a small C++ frame counter.
 - [x] Separate the placeholder C++ core into a platform-independent header under `Engine/Core`.
+- [x] Add standalone C++ tests for start/stop behavior and frame counting.
+- [x] Run the C++ tests in GitHub Actions before the iOS build.
 - [x] Expose the wrapper to Swift through a bridging header.
 - [x] Add a button that calls the native code and displays its frame count.
 - [x] Confirm the native bridge build passes.
@@ -22,9 +24,9 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 - [ ] Run the app and test the Metal surface and native counter in the iOS Simulator or on a device.
 - [ ] Complete source provenance, license, and dependency review before selecting an engine.
 
-The latest confirmed CI build passed with Xcode 16.4 (build 16F6) and iOS Simulator SDK 18.5. The project targets iOS 16.0 or later. A successful compile does not yet confirm runtime behavior on a simulator or device.
+The latest confirmed CI build passed with Xcode 16.4 (build 16F6) and iOS Simulator SDK 18.5. The project targets iOS 16.0 or later. The CI workflow now also compiles and runs focused tests for the standalone C++ placeholder core. A successful compile/test does not yet confirm runtime behavior on a simulator or device.
 
-The C++ core is now isolated from the Objective-C++ bridge in a header-only component. This is an architectural seam for future platform-independent code, not an integrated game engine. The bridge still only controls a placeholder frame counter. The Metal preview clears a render surface; it does not draw Minecraft graphics.
+The C++ core is isolated from the Objective-C++ bridge in a header-only component. Its tests check stopped/running state, frame counting, and restart behavior. This is an architectural seam for future platform-independent code, not an integrated game engine. The bridge still only controls a placeholder frame counter. The Metal preview clears a render surface; it does not draw Minecraft graphics.
 
 ## Planned direction
 
@@ -36,7 +38,7 @@ C++ can help share game logic across platforms, but platform-specific graphics, 
 
 ## Build
 
-Open `ios/MinecraftLegacyMobile.xcodeproj` in Xcode on macOS and select the `MinecraftLegacyMobile` scheme. GitHub Actions builds the project for the iOS Simulator on pushes to `main`, pull requests, and manual runs.
+Open `ios/MinecraftLegacyMobile.xcodeproj` in Xcode on macOS and select the `MinecraftLegacyMobile` scheme. GitHub Actions runs the standalone C++ core tests and builds the project for the iOS Simulator on pushes to `main`, pull requests, and manual runs.
 
 ## Legal and project status
 
