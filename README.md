@@ -4,15 +4,18 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 
 ## Current status
 
-**Stage 0 — iOS foundation**
+**Stage 2 — Native bridge proof of concept (build verification pending)**
 
-- [x] Create the repository and initial project structure.
-- [x] Confirm the starter app builds in GitHub Actions.
-- [ ] Audit available porting projects, their licenses, dependencies, and technical status.
-- [ ] Establish what code and assets may lawfully be reused.
-- [ ] Evaluate engine dependencies before attempting integration.
+- [x] Create the native SwiftUI iOS app.
+- [x] Confirm the original SwiftUI-only app builds in GitHub Actions.
+- [x] Add a minimal Objective-C++ wrapper containing a small C++ frame counter.
+- [x] Expose the wrapper to Swift through a bridging header.
+- [x] Add a button that calls the native code and displays its frame count.
+- [ ] Confirm the updated build passes in GitHub Actions.
+- [ ] Audit candidate engine projects, dependencies, and applicable licenses.
+- [ ] Establish a lawful and technically viable route to engine integration.
 
-The initial app is only a build-system proof of concept. It does not contain the Minecraft engine, gameplay, or original game assets.
+The native bridge is only an integration test. It does not contain the Minecraft engine, gameplay, or original game assets.
 
 ## Planned direction
 
@@ -24,7 +27,7 @@ C++ can help share game logic across platforms, but platform-specific graphics, 
 
 ## Build
 
-Open `ios/MinecraftLegacyMobile.xcodeproj` in Xcode on macOS and select the `MinecraftLegacyMobile` scheme. GitHub Actions builds the starter app for the iOS Simulator on pushes to `main`, pull requests, and manual runs.
+Open `ios/MinecraftLegacyMobile.xcodeproj` in Xcode on macOS and select the `MinecraftLegacyMobile` scheme. GitHub Actions builds the project for the iOS Simulator on pushes to `main`, pull requests, and manual runs.
 
 ## Legal and project status
 
