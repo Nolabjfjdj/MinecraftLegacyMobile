@@ -4,6 +4,19 @@
 
 Identify a technically feasible and legally permitted route toward a native iOS game runtime. The current SwiftUI app is only a build-system proof of concept; it is not the game engine.
 
+## Candidate reference: MCLCE-iOS
+
+Repository: https://github.com/dtentiion/MCLCE-iOS
+
+Its public README describes a native C++/CMake iOS port of TU19 Legacy Console Edition. The project reports that its main menu works and that gameplay simulation code is linked and ticking, while its installation page still says there is no playable build yet. It describes a rendering/UI stack involving Ruffle, wgpu/MetalANGLE, miniaudio, and Apple's GameController framework.
+
+This is a valuable technical reference for understanding the scale of the porting work, but it is not automatically a reusable dependency. Its CONTRIBUTING guide says the project-wide license is still to be decided. Do not copy or integrate its code unless the maintainers clarify the applicable license and permissions. This project should independently record the rights and licenses for every component it uses.
+
+Sources:
+- https://github.com/dtentiion/MCLCE-iOS
+- https://github.com/dtentiion/MCLCE-iOS/blob/main/INSTALL.md
+- https://github.com/dtentiion/MCLCE-iOS/blob/main/CONTRIBUTING.md
+
 ## Gate 1: inspect candidate projects
 
 Before copying or integrating code, record for each candidate:
