@@ -6,6 +6,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var engineBridge = LegacyEngineBridge()
     @State private var frameCount = 0
+    @State private var engineRunning = false
     private let lifecycleLogger = Logger(subsystem: "MinecraftLegacyMobile", category: "Lifecycle")
 
     var body: some View {
@@ -58,6 +59,7 @@ struct ContentView: View {
                     Label("Simuler une frame native", systemImage: "play.fill")
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(!engineRunning)
             }
 
             Text("Ce prototype valide le pont Swift/C++ et prépare le rendu natif. Le moteur et les ressources Minecraft ne sont pas intégrés.")
@@ -68,9 +70,23 @@ struct ContentView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            updateEngineLifecycle(for: scenePhase)
+        }
         .onChange(of: scenePhase) { phase in
             lifecycleLogger.info("Scene phase changed: \(String(describing: phase), privacy: .public)")
+            updateEngineLifecycle(for: phase)
         }
+    }
+
+    private func updateEngineLifecycle(for phase: ScenePhase) {
+        if phase == .active {
+            engineBridge.start()
+        } else {
+            engineBridge.stop()
+        }
+
+        engineRunning = engineBridge.isRunning()
     }
 }
 

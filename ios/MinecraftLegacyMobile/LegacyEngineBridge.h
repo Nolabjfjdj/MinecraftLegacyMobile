@@ -6,6 +6,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSString *)statusMessage;
 - (NSInteger)frameCount;
+- (BOOL)isRunning;
+- (void)start;
+- (void)stop;
 - (void)advanceFrame;
 
 @end

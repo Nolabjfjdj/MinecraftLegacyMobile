@@ -15,13 +15,14 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 - [x] Add an initial MetalKit render-pass test that clears a native render surface.
 - [x] Verify the MetalKit code compiles in GitHub Actions.
 - [x] Pause the Metal preview while the app is inactive and log scene lifecycle changes.
+- [x] Add a placeholder C++ start/stop lifecycle tied to the app's active state.
 - [x] Record an initial technical and licensing assessment of the MCLCE-iOS reference.
 - [ ] Run the app and test the Metal surface and native counter in the iOS Simulator or on a device.
 - [ ] Complete source provenance, license, and dependency review before selecting an engine.
 
 The latest CI build passed with Xcode 16.4 (build 16F6) and iOS Simulator SDK 18.5. The project targets iOS 16.0 or later. A successful compile does not yet confirm runtime behavior on a simulator or device.
 
-The bridge and Metal preview are integration tests only. They do not contain the Minecraft engine, gameplay, or original game assets. The Metal preview clears a render surface; it does not draw Minecraft graphics.
+The bridge and Metal preview are integration tests only. The C++ lifecycle is a placeholder, not the actual game engine. They do not contain the Minecraft engine, gameplay, or original game assets. The Metal preview clears a render surface; it does not draw Minecraft graphics.
 
 ## Planned direction
 

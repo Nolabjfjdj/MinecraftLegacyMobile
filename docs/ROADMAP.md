@@ -28,6 +28,7 @@
 - [x] Add an initial MetalKit render-pass proof of concept that clears a native render surface.
 - [x] Confirm the Metal proof of concept compiles in CI.
 - [x] Pause Metal rendering when the app is inactive and log scene lifecycle changes.
+- [x] Add start/stop lifecycle handling to the placeholder C++ core and connect it to the SwiftUI scene phase.
 - [ ] Run the Metal proof of concept on the iOS Simulator or a physical device.
 - [ ] Add engine-specific lifecycle handling only after an eligible engine and its license are identified.
 
