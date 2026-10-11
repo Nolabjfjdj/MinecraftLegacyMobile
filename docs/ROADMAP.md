@@ -6,7 +6,7 @@
 - [x] Confirm the initial SwiftUI-only app builds in GitHub Actions.
 - [x] Configure automatic iOS Simulator builds on pushes to main and pull requests.
 - [x] Verify the updated native bridge build (confirmed by the project owner).
-- [ ] Document the exact Xcode and SDK versions reported by CI.
+- [x] Record CI toolchain details: Xcode 16.4 (build 16F6), iOS Simulator SDK 18.5, deployment target iOS 16.0.
 
 ## Stage 1 — Technical and rights audit
 
@@ -23,12 +23,13 @@
 - [x] Add a minimal Objective-C++ wrapper containing a small C++ core.
 - [x] Expose the wrapper to Swift through an Objective-C bridging header.
 - [x] Add an on-screen button that calls the C++ frame counter.
-- [x] Confirm the updated project compiles (build confirmed by the project owner).
+- [x] Confirm the updated project compiles.
 - [ ] Test the counter in a running app on the iOS Simulator or a physical device.
 - [x] Add an initial MetalKit render-pass proof of concept that clears a native render surface.
-- [ ] Confirm the Metal proof of concept compiles in CI.
+- [x] Confirm the Metal proof of concept compiles in CI.
+- [x] Pause Metal rendering when the app is inactive and log scene lifecycle changes.
 - [ ] Run the Metal proof of concept on the iOS Simulator or a physical device.
-- [ ] Add lifecycle handling and logging before integrating any eligible engine.
+- [ ] Add engine-specific lifecycle handling only after an eligible engine and its license are identified.
 
 ## Later platforms
 
