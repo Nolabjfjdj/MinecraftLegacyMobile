@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var engineBridge = LegacyEngineBridge()
     @State private var frameCount = 0
     @State private var engineRunning = false
+    @State private var isFirstPerson = false
     private let lifecycleLogger = Logger(subsystem: "MinecraftLegacyMobile", category: "Lifecycle")
 
     var body: some View {
@@ -24,14 +25,21 @@ struct ContentView: View {
             Text("Terrain voxel • rendu Metal")
                 .font(.headline)
 
-            MetalPreview(isActive: scenePhase == .active, bridge: engineBridge)
+            MetalPreview(isActive: scenePhase == .active, bridge: engineBridge, isFirstPerson: isFirstPerson)
                 .frame(height: 320)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            Text("Glisse pour tourner autour du terrain • pince pour zoomer")
+            Text(isFirstPerson ? "Glisse pour regarder autour de toi" : "Glisse pour tourner autour du terrain • pince pour zoomer")
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
+
+            Button {
+                isFirstPerson.toggle()
+            } label: {
+                Label(isFirstPerson ? "Revenir en vue extérieure" : "Passer en vue à la première personne", systemImage: isFirstPerson ? "view.3d" : "person.fill")
+            }
+            .buttonStyle(.borderedProminent)
 
             Text(engineBridge.statusMessage())
                 .font(.footnote)
@@ -96,6 +104,7 @@ struct ContentView: View {
 private struct MetalPreview: UIViewRepresentable {
     let isActive: Bool
     let bridge: LegacyEngineBridge
+    let isFirstPerson: Bool
 
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
@@ -119,6 +128,7 @@ private struct MetalPreview: UIViewRepresentable {
 
     func updateUIView(_ view: MTKView, context: Context) {
         view.isPaused = !isActive
+        context.coordinator.setFirstPerson(isFirstPerson)
     }
 
     func makeCoordinator() -> Renderer {
@@ -136,6 +146,13 @@ private struct MetalPreview: UIViewRepresentable {
         private var cameraYaw: Float = 0.63
         private var cameraPitch: Float = 0.5
         private var cameraDistance: Float = 60
+        private var isFirstPerson = false
+
+        fileprivate func setFirstPerson(_ enabled: Bool) {
+            guard isFirstPerson != enabled else { return }
+            isFirstPerson = enabled
+            cameraPitch = 0
+        }
 
         init(bridge: LegacyEngineBridge) {
             device = MTLCreateSystemDefaultDevice()
@@ -250,7 +267,12 @@ private struct MetalPreview: UIViewRepresentable {
         @objc fileprivate func handlePan(_ gesture: UIPanGestureRecognizer) {
             let translation = gesture.translation(in: gesture.view)
             cameraYaw -= Float(translation.x) * 0.008
-            cameraPitch = min(max(cameraPitch + Float(translation.y) * 0.008, -0.05), 1.25)
+            let pitchDelta = Float(translation.y) * 0.008
+            if isFirstPerson {
+                cameraPitch = min(max(cameraPitch - pitchDelta, -1.2), 1.2)
+            } else {
+                cameraPitch = min(max(cameraPitch + pitchDelta, -0.05), 1.25)
+            }
             gesture.setTranslation(.zero, in: gesture.view)
         }
 
@@ -277,13 +299,25 @@ private struct MetalPreview: UIViewRepresentable {
 
             let aspect = max(Float(view.drawableSize.width / max(view.drawableSize.height, 1)), 0.1)
             let projection = perspectiveMatrix(verticalFOV: 1.05, aspect: aspect, near: 0.1, far: 200)
-            let target = SIMD3<Float>(16, 14, 16)
-            let horizontalDistance = cameraDistance * cos(cameraPitch)
-            let eye = target + SIMD3<Float>(
-                sin(cameraYaw) * horizontalDistance,
-                sin(cameraPitch) * cameraDistance,
-                cos(cameraYaw) * horizontalDistance
-            )
+            let eye: SIMD3<Float>
+            let target: SIMD3<Float>
+            if isFirstPerson {
+                eye = SIMD3<Float>(16, 20, 16)
+                let lookDirection = SIMD3<Float>(
+                    sin(cameraYaw) * cos(cameraPitch),
+                    sin(cameraPitch),
+                    cos(cameraYaw) * cos(cameraPitch)
+                )
+                target = eye + lookDirection
+            } else {
+                target = SIMD3<Float>(16, 14, 16)
+                let horizontalDistance = cameraDistance * cos(cameraPitch)
+                eye = target + SIMD3<Float>(
+                    sin(cameraYaw) * horizontalDistance,
+                    sin(cameraPitch) * cameraDistance,
+                    cos(cameraYaw) * horizontalDistance
+                )
+            }
             let viewMatrix = lookAtMatrix(eye: eye, target: target, up: SIMD3<Float>(0, 1, 0))
             let mvp = projection * viewMatrix
 
