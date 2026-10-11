@@ -57,6 +57,12 @@ The first engine-related milestone should be a minimal native rendering test on 
 
 A simulator build does not prove that the same code will run correctly on a physical device.
 
+## Upstream source landscape
+
+The public MCLCE organization describes `MinecraftConsoles` as a TU19-based community upstream intended to support further ports and forks. Its public repository metadata and documentation are useful for understanding the project structure, but public availability is not a license grant. Before any code is considered for this app, the upstream maintainers' terms and the provenance of the source must be clear.
+
+A port or fork for a different console is useful as evidence of platform-specific adaptations, not as proof that its platform layer can be reused on iOS. Xbox UWP, Windows desktop, PlayStation, and iOS have different SDKs, graphics APIs, input and audio integrations, and packaging rules. The target should be a portable engine core with a separately implemented iOS platform layer, if the rights permit that approach.
+
 ## Current blockers
 
 - No Legacy Console Edition engine is integrated; the current C++ code is only a frame counter.
