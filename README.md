@@ -9,6 +9,7 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 - [x] Create the native SwiftUI iOS app.
 - [x] Confirm the original SwiftUI-only app builds in GitHub Actions.
 - [x] Add a minimal Objective-C++ wrapper containing a small C++ frame counter.
+- [x] Separate the placeholder C++ core into a platform-independent header under `Engine/Core`.
 - [x] Expose the wrapper to Swift through a bridging header.
 - [x] Add a button that calls the native code and displays its frame count.
 - [x] Confirm the native bridge build passes.
@@ -21,9 +22,9 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 - [ ] Run the app and test the Metal surface and native counter in the iOS Simulator or on a device.
 - [ ] Complete source provenance, license, and dependency review before selecting an engine.
 
-The latest CI build passed with Xcode 16.4 (build 16F6) and iOS Simulator SDK 18.5. The project targets iOS 16.0 or later. A successful compile does not yet confirm runtime behavior on a simulator or device.
+The latest confirmed CI build passed with Xcode 16.4 (build 16F6) and iOS Simulator SDK 18.5. The project targets iOS 16.0 or later. A successful compile does not yet confirm runtime behavior on a simulator or device.
 
-The bridge and Metal preview are integration tests only. The C++ lifecycle is a placeholder, not the actual game engine. They do not contain the Minecraft engine, gameplay, or original game assets. The Metal preview clears a render surface; it does not draw Minecraft graphics.
+The C++ core is now isolated from the Objective-C++ bridge in a header-only component. This is an architectural seam for future platform-independent code, not an integrated game engine. The bridge still only controls a placeholder frame counter. The Metal preview clears a render surface; it does not draw Minecraft graphics.
 
 ## Planned direction
 

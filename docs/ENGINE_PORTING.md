@@ -2,7 +2,11 @@
 
 ## Objective
 
-Identify a technically feasible and legally permitted route toward a native iOS game runtime. The current SwiftUI app and Objective-C++ bridge compile successfully, but the bridge only increments a test counter; it is not the game engine and does not run Minecraft.
+Identify a technically feasible and legally permitted route toward a native iOS game runtime. The current SwiftUI app and Objective-C++ bridge compile successfully, but the bridge only controls a test counter; it is not the game engine and does not run Minecraft.
+
+## Current native boundary
+
+The placeholder core lives in `Engine/Core/LegacyEngineCore.hpp`, a header-only C++ component with no Apple framework dependency. The Objective-C++ bridge includes it and exposes a narrow interface to Swift. This is a small architectural boundary, not proof that an existing console engine can be dropped into the app. Real engine code may require substantial platform adaptation, dependency work, and permission review.
 
 ## Candidate reference: MCLCE-iOS
 
@@ -13,6 +17,7 @@ Its public README describes a native C++/CMake iOS port of TU19 Legacy Console E
 This is a valuable technical reference for understanding the scale of the porting work, but it is not automatically a reusable dependency. Its CONTRIBUTING guide says the project-wide license is still to be decided. Do not copy or integrate its code unless the maintainers clarify the applicable license and permissions. This project should independently record the rights and licenses for every component it uses.
 
 Sources:
+
 - https://github.com/dtentiion/MCLCE-iOS
 - https://github.com/dtentiion/MCLCE-iOS/blob/main/INSTALL.md
 - https://github.com/dtentiion/MCLCE-iOS/blob/main/CONTRIBUTING.md
@@ -41,7 +46,7 @@ For any candidate whose use is permitted, classify dependencies into:
 - **Audio:** device output, mixing, streaming, and audio assets.
 - **Storage:** saves, configuration, resource lookup, and writable directories.
 - **Networking:** sockets, protocol code, platform APIs, and certificate handling.
-- **Platform services:** lifecycle, pause/resume, memory warnings, and application events.
+- **Platform services:** lifecycle, pause/resume, threads, timing, memory warnings, and application events.
 
 Do not assume a desktop or console renderer will work on iOS without adaptation.
 
@@ -49,7 +54,7 @@ Do not assume a desktop or console renderer will work on iOS without adaptation.
 
 Keep Swift responsible for iOS application lifecycle and native UI. If an eligible engine is written in C or C++, evaluate a small C-compatible interface that Swift can call through a bridging header. Keep platform-specific code behind narrow interfaces so Android can be considered later.
 
-Do not introduce a large engine dependency until its license, build requirements, and platform assumptions are understood.
+The current `Engine/Core` component is only a placeholder showing where platform-independent C++ code can live. Do not introduce a large engine dependency until its license, build requirements, and platform assumptions are understood.
 
 ## Gate 4: prove one small milestone
 

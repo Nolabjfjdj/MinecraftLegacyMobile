@@ -21,6 +21,7 @@
 ## Stage 2 — Native bridge proof of concept
 
 - [x] Add a minimal Objective-C++ wrapper containing a small C++ core.
+- [x] Separate the placeholder C++ core from the Objective-C++ bridge in `Engine/Core/LegacyEngineCore.hpp`.
 - [x] Expose the wrapper to Swift through an Objective-C bridging header.
 - [x] Add an on-screen button that calls the C++ frame counter.
 - [x] Confirm the updated project compiles.
