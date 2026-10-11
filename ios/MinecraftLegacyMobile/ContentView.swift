@@ -82,7 +82,7 @@ private struct MetalPreview: UIViewRepresentable {
 
     func updateUIView(_ view: MTKView, context: Context) {}
 
-    func makeCoordinator() -> Renderer {
+    private func makeCoordinator() -> Renderer {
         Renderer()
     }
 
