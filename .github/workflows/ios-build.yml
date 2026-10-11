@@ -27,6 +27,16 @@ jobs:
             -o /tmp/legacy-engine-core-tests
           /tmp/legacy-engine-core-tests
 
+      - name: Test voxel world
+        run: |
+          clang++ \
+            -std=c++17 \
+            -Wall -Wextra -Werror -pedantic \
+            -I Engine/Core \
+            Engine/Tests/LegacyVoxelWorldTests.cpp \
+            -o /tmp/legacy-voxel-world-tests
+          /tmp/legacy-voxel-world-tests
+
       - name: Build for iOS Simulator
         run: |
           xcodebuild \
