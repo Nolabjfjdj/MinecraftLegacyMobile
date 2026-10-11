@@ -4,18 +4,22 @@ An independent project exploring a native iOS port of the Minecraft: Legacy Cons
 
 ## Current status
 
-**Stage 2 — Native bridge and Metal rendering proof of concept (CI verification pending)**
+**Stage 2 — Native bridge and Metal rendering proof of concept (CI build passed; simulator runtime test pending)**
 
 - [x] Create the native SwiftUI iOS app.
 - [x] Confirm the original SwiftUI-only app builds in GitHub Actions.
 - [x] Add a minimal Objective-C++ wrapper containing a small C++ frame counter.
 - [x] Expose the wrapper to Swift through a bridging header.
 - [x] Add a button that calls the native code and displays its frame count.
-- [x] Confirm the updated bridge build passes.
+- [x] Confirm the native bridge build passes.
 - [x] Add an initial MetalKit render-pass test that clears a native render surface.
+- [x] Verify the MetalKit code compiles in GitHub Actions.
+- [x] Pause the Metal preview while the app is inactive and log scene lifecycle changes.
 - [x] Record an initial technical and licensing assessment of the MCLCE-iOS reference.
-- [ ] Verify the new MetalKit code in GitHub Actions and run it in the iOS Simulator.
+- [ ] Run the app and test the Metal surface and native counter in the iOS Simulator or on a device.
 - [ ] Complete source provenance, license, and dependency review before selecting an engine.
+
+The latest CI build passed with Xcode 16.4 (build 16F6) and iOS Simulator SDK 18.5. The project targets iOS 16.0 or later. A successful compile does not yet confirm runtime behavior on a simulator or device.
 
 The bridge and Metal preview are integration tests only. They do not contain the Minecraft engine, gameplay, or original game assets. The Metal preview clears a render surface; it does not draw Minecraft graphics.
 
