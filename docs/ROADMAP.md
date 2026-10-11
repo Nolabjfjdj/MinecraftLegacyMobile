@@ -25,7 +25,9 @@
 - [x] Add an on-screen button that calls the C++ frame counter.
 - [x] Confirm the updated project compiles (build confirmed by the project owner).
 - [ ] Test the counter in a running app on the iOS Simulator or a physical device.
-- [ ] Build a separate minimal Metal rendering proof of concept before attempting engine integration.
+- [x] Add an initial MetalKit render-pass proof of concept that clears a native render surface.
+- [ ] Confirm the Metal proof of concept compiles in CI.
+- [ ] Run the Metal proof of concept on the iOS Simulator or a physical device.
 - [ ] Add lifecycle handling and logging before integrating any eligible engine.
 
 ## Later platforms
