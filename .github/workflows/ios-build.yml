@@ -37,6 +37,16 @@ jobs:
             -o /tmp/legacy-voxel-world-tests
           /tmp/legacy-voxel-world-tests
 
+      - name: Test voxel mesher
+        run: |
+          clang++ \
+            -std=c++17 \
+            -Wall -Wextra -Werror -pedantic \
+            -I Engine/Core \
+            Engine/Tests/VoxelMesherTests.cpp \
+            -o /tmp/voxel-mesher-tests
+          /tmp/voxel-mesher-tests
+
       - name: Build for iOS Simulator
         run: |
           xcodebuild \
