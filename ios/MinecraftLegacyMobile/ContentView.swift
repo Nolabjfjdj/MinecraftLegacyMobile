@@ -10,6 +10,8 @@ struct ContentView: View {
     @State private var frameCount = 0
     @State private var engineRunning = false
     @State private var isFirstPerson = false
+    @State private var movementX: Float = 0
+    @State private var movementY: Float = 0
     private let lifecycleLogger = Logger(subsystem: "MinecraftLegacyMobile", category: "Lifecycle")
 
     var body: some View {
@@ -25,11 +27,26 @@ struct ContentView: View {
             Text("Terrain voxel • rendu Metal")
                 .font(.headline)
 
-            MetalPreview(isActive: scenePhase == .active, bridge: engineBridge, isFirstPerson: isFirstPerson)
-                .frame(height: 320)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+            ZStack(alignment: .bottomLeading) {
+                MetalPreview(
+                    isActive: scenePhase == .active,
+                    bridge: engineBridge,
+                    isFirstPerson: isFirstPerson,
+                    movementX: movementX,
+                    movementY: movementY
+                )
+                if isFirstPerson {
+                    VirtualJoystick { x, y in
+                        movementX = x
+                        movementY = y
+                    }
+                    .padding(14)
+                }
+            }
+            .frame(height: 320)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            Text(isFirstPerson ? "Glisse pour regarder autour de toi" : "Glisse pour tourner autour du terrain • pince pour zoomer")
+            Text(isFirstPerson ? "Joystick gauche pour avancer • glisse ailleurs pour regarder" : "Glisse pour tourner autour du terrain • pince pour zoomer")
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -101,10 +118,49 @@ struct ContentView: View {
     }
 }
 
+private struct VirtualJoystick: View {
+    let onChange: (Float, Float) -> Void
+    @State private var offset: CGSize = .zero
+    private let radius: CGFloat = 34
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(.black.opacity(0.28))
+                .frame(width: 112, height: 112)
+                .overlay(Circle().stroke(.white.opacity(0.7), lineWidth: 2))
+            Circle()
+                .fill(.white.opacity(0.82))
+                .frame(width: 48, height: 48)
+                .offset(offset)
+        }
+        .frame(width: 112, height: 112)
+        .contentShape(Circle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    let dx = value.translation.width
+                    let dy = value.translation.height
+                    let distance = sqrt(dx * dx + dy * dy)
+                    let scale = distance > radius ? radius / distance : 1
+                    offset = CGSize(width: dx * scale, height: dy * scale)
+                    onChange(Float(offset.width / radius), Float(-offset.height / radius))
+                }
+                .onEnded { _ in
+                    offset = .zero
+                    onChange(0, 0)
+                }
+        )
+        .accessibilityLabel("Joystick de déplacement")
+    }
+}
+
 private struct MetalPreview: UIViewRepresentable {
     let isActive: Bool
     let bridge: LegacyEngineBridge
     let isFirstPerson: Bool
+    let movementX: Float
+    let movementY: Float
 
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
@@ -129,6 +185,7 @@ private struct MetalPreview: UIViewRepresentable {
     func updateUIView(_ view: MTKView, context: Context) {
         view.isPaused = !isActive
         context.coordinator.setFirstPerson(isFirstPerson)
+        context.coordinator.setMovement(x: movementX, forward: movementY)
     }
 
     func makeCoordinator() -> Renderer {
@@ -147,11 +204,25 @@ private struct MetalPreview: UIViewRepresentable {
         private var cameraPitch: Float = 0.5
         private var cameraDistance: Float = 60
         private var isFirstPerson = false
+        private var movementX: Float = 0
+        private var movementForward: Float = 0
+        private var playerPosition = SIMD3<Float>(16, 20, 16)
+        private var lastFrameTime: CFTimeInterval = 0
 
         fileprivate func setFirstPerson(_ enabled: Bool) {
             guard isFirstPerson != enabled else { return }
             isFirstPerson = enabled
             cameraPitch = 0
+            movementX = 0
+            movementForward = 0
+            if !enabled {
+                playerPosition = SIMD3<Float>(16, 20, 16)
+            }
+        }
+
+        fileprivate func setMovement(x: Float, forward: Float) {
+            movementX = min(max(x, -1), 1)
+            movementForward = min(max(forward, -1), 1)
         }
 
         init(bridge: LegacyEngineBridge) {
@@ -297,12 +368,27 @@ private struct MetalPreview: UIViewRepresentable {
                 return
             }
 
+            let now = CACurrentMediaTime()
+            let deltaTime = lastFrameTime == 0 ? 0 : min(Float(now - lastFrameTime), 0.05)
+            lastFrameTime = now
+            if isFirstPerson && deltaTime > 0 {
+                let forward = SIMD3<Float>(sin(cameraYaw), 0, cos(cameraYaw))
+                let right = SIMD3<Float>(cos(cameraYaw), 0, -sin(cameraYaw))
+                let input = forward * movementForward + right * movementX
+                let magnitude = simd_length(input)
+                if magnitude > 0.01 {
+                    let step = simd_normalize(input) * (5 * deltaTime)
+                    playerPosition.x = min(max(playerPosition.x + step.x, 1), 30)
+                    playerPosition.z = min(max(playerPosition.z + step.z, 1), 30)
+                }
+            }
+
             let aspect = max(Float(view.drawableSize.width / max(view.drawableSize.height, 1)), 0.1)
             let projection = perspectiveMatrix(verticalFOV: 1.05, aspect: aspect, near: 0.1, far: 200)
             let eye: SIMD3<Float>
             let target: SIMD3<Float>
             if isFirstPerson {
-                eye = SIMD3<Float>(16, 20, 16)
+                eye = playerPosition
                 let lookDirection = SIMD3<Float>(
                     sin(cameraYaw) * cos(cameraPitch),
                     sin(cameraPitch),
