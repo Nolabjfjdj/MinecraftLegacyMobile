@@ -82,11 +82,11 @@ private struct MetalPreview: UIViewRepresentable {
 
     func updateUIView(_ view: MTKView, context: Context) {}
 
-    private func makeCoordinator() -> Renderer {
+    fileprivate func makeCoordinator() -> Renderer {
         Renderer()
     }
 
-    private final class Renderer: NSObject, MTKViewDelegate {
+    fileprivate final class Renderer: NSObject, MTKViewDelegate {
         private let commandQueue = MTLCreateSystemDefaultDevice()?.makeCommandQueue()
 
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
