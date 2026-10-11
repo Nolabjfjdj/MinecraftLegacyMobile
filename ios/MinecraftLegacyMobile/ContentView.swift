@@ -2,6 +2,7 @@ import SwiftUI
 import MetalKit
 import OSLog
 import simd
+import UIKit
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -26,6 +27,11 @@ struct ContentView: View {
             MetalPreview(isActive: scenePhase == .active, bridge: engineBridge)
                 .frame(height: 320)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
+
+            Text("Glisse pour tourner autour du terrain • pince pour zoomer")
+                .font(.caption)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
 
             Text(engineBridge.statusMessage())
                 .font(.footnote)
@@ -54,7 +60,7 @@ struct ContentView: View {
             .buttonStyle(.borderedProminent)
             .disabled(!engineRunning)
 
-            Text("Terrain de test généré en C++ et affiché avec Metal. Ce n’est pas encore le moteur original de Minecraft Legacy Console Edition.")
+            Text("Prototype de terrain voxel. Le moteur original de Minecraft Legacy Console Edition et les commandes de jeu restent à implémenter.")
                 .font(.footnote)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -101,6 +107,13 @@ private struct MetalPreview: UIViewRepresentable {
         view.preferredFramesPerSecond = 60
         view.isPaused = !isActive
         view.enableSetNeedsDisplay = false
+
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Renderer.handlePan(_:)))
+        pan.maximumNumberOfTouches = 1
+        view.addGestureRecognizer(pan)
+
+        let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Renderer.handlePinch(_:)))
+        view.addGestureRecognizer(pinch)
         return view
     }
 
@@ -120,6 +133,9 @@ private struct MetalPreview: UIViewRepresentable {
         private let vertexBuffer: MTLBuffer?
         private let indexBuffer: MTLBuffer?
         private let indexCount: Int
+        private var cameraYaw: Float = 0.63
+        private var cameraPitch: Float = 0.5
+        private var cameraDistance: Float = 60
 
         init(bridge: LegacyEngineBridge) {
             device = MTLCreateSystemDefaultDevice()
@@ -231,11 +247,22 @@ private struct MetalPreview: UIViewRepresentable {
             super.init()
         }
 
+        @objc fileprivate func handlePan(_ gesture: UIPanGestureRecognizer) {
+            let translation = gesture.translation(in: gesture.view)
+            cameraYaw -= Float(translation.x) * 0.008
+            cameraPitch = min(max(cameraPitch + Float(translation.y) * 0.008, -0.05), 1.25)
+            gesture.setTranslation(.zero, in: gesture.view)
+        }
+
+        @objc fileprivate func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+            cameraDistance = min(max(cameraDistance / Float(gesture.scale), 25), 120)
+            gesture.scale = 1
+        }
+
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
         func draw(in view: MTKView) {
             guard
-                let device,
                 let vertexBuffer,
                 let indexBuffer,
                 let pipelineState,
@@ -250,8 +277,13 @@ private struct MetalPreview: UIViewRepresentable {
 
             let aspect = max(Float(view.drawableSize.width / max(view.drawableSize.height, 1)), 0.1)
             let projection = perspectiveMatrix(verticalFOV: 1.05, aspect: aspect, near: 0.1, far: 200)
-            let eye = SIMD3<Float>(47, 43, 58)
             let target = SIMD3<Float>(16, 14, 16)
+            let horizontalDistance = cameraDistance * cos(cameraPitch)
+            let eye = target + SIMD3<Float>(
+                sin(cameraYaw) * horizontalDistance,
+                sin(cameraPitch) * cameraDistance,
+                cos(cameraYaw) * horizontalDistance
+            )
             let viewMatrix = lookAtMatrix(eye: eye, target: target, up: SIMD3<Float>(0, 1, 0))
             let mvp = projection * viewMatrix
 
