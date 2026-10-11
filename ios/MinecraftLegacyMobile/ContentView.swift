@@ -1,9 +1,12 @@
 import SwiftUI
 import MetalKit
+import OSLog
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var engineBridge = LegacyEngineBridge()
     @State private var frameCount = 0
+    private let lifecycleLogger = Logger(subsystem: "MinecraftLegacyMobile", category: "Lifecycle")
 
     var body: some View {
         VStack(spacing: 20) {
@@ -28,7 +31,7 @@ struct ContentView: View {
                     .font(.headline)
 
                 if MTLCreateSystemDefaultDevice() != nil {
-                    MetalPreview()
+                    MetalPreview(isActive: scenePhase == .active)
                         .frame(height: 180)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
 
@@ -65,22 +68,29 @@ struct ContentView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: scenePhase) { phase in
+            lifecycleLogger.info("Scene phase changed: \(String(describing: phase), privacy: .public)")
+        }
     }
 }
 
 private struct MetalPreview: UIViewRepresentable {
+    let isActive: Bool
+
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
         view.delegate = context.coordinator
         view.clearColor = MTLClearColor(red: 0.025, green: 0.045, blue: 0.09, alpha: 1)
         view.colorPixelFormat = .bgra8Unorm
         view.preferredFramesPerSecond = 60
-        view.isPaused = false
+        view.isPaused = !isActive
         view.enableSetNeedsDisplay = false
         return view
     }
 
-    func updateUIView(_ view: MTKView, context: Context) {}
+    func updateUIView(_ view: MTKView, context: Context) {
+        view.isPaused = !isActive
+    }
 
     fileprivate func makeCoordinator() -> Renderer {
         Renderer()
