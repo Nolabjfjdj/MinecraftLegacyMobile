@@ -79,4 +79,8 @@
     return indexData_.size();
 }
 
+- (NSInteger)surfaceHeightAtX:(NSInteger)x z:(NSInteger)z {
+    return static_cast<NSInteger>(world_.surfaceHeightAt(static_cast<int>(x), static_cast<int>(z)));
+}
+
 @end

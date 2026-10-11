@@ -220,8 +220,11 @@ private struct MetalPreview: UIViewRepresentable {
         private var isFirstPerson = false
         private var movementX: Float = 0
         private var movementForward: Float = 0
-        private var playerPosition = SIMD3<Float>(16, 20, 16)
+        private var playerPosition = SIMD3<Float>(16, 27, 16)
+        private var verticalVelocity: Float = 0
+        private var isGrounded = true
         private var lastFrameTime: CFTimeInterval = 0
+        private var lastJumpRequest = 0
 
         fileprivate func setFirstPerson(_ enabled: Bool) {
             guard isFirstPerson != enabled else { return }
